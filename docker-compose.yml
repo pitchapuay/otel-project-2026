@@ -1,0 +1,55 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+    depends_on:
+      - lgtm
+
+  lgtm:
+    image: grafana/otel-lgtm:latest
+    ports:
+      - "3000:3000" # Local Grafana Web UI
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "8000:8000"
+    environment:
+      - PAYMENT_HOST=payment-service
+      - PAYMENT_PORT=8001
+      - NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register
+      - OTEL_SERVICE_NAME=order-service
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/json
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_BSP_SCHEDULE_DELAY=1000
+      - OTEL_METRIC_EXPORT_INTERVAL=5000
+      - OTEL_LOG_LEVEL=info
+    depends_on:
+      - payment-service
+      - otel-collector
+
+  payment-service:
+    build: ./payment-service
+    ports:
+      - "8001:8001"
+    environment:
+      - NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register
+      - OTEL_SERVICE_NAME=payment-service
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/json
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_BSP_SCHEDULE_DELAY=1000
+      - OTEL_METRIC_EXPORT_INTERVAL=5000
+      - OTEL_LOG_LEVEL=info
+    depends_on:
+      - otel-collector

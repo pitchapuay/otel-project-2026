@@ -1,0 +1,18 @@
+{
+  "name": "otel-microservice",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.19.2",
+    "winston": "^3.13.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api-logs": "^0.52.0",
+    "@opentelemetry/sdk-logs": "^0.52.0",
+    "@opentelemetry/sdk-node": "^0.52.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.48.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.52.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.52.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.52.0",
+    "@opentelemetry/winston-transport": "^0.7.0"
+  }
+}

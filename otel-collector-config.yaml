@@ -1,0 +1,48 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # 1. Scrub sensitive PII attributes before exporting
+  attributes/scrub_pii:
+    actions:
+      # Overwrite the credit card number with [REDACTED]
+      - key: app.payment.card_number
+        value: "[REDACTED-BY-COLLECTOR]"
+        action: update
+      # Bonus: Stamp every trace with an environment attribute
+      - key: deployment.environment
+        value: "local-dev-lab"
+        action: insert
+
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+exporters:
+  debug:
+    verbosity: basic
+  otlp/lgtm:
+    endpoint: lgtm:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      # 2. Register attributes/scrub_pii in the traces pipeline!
+      processors: [attributes/scrub_pii, batch]
+      exporters: [debug, otlp/lgtm]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlp/lgtm]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlp/lgtm]

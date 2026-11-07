@@ -1,0 +1,7 @@
+# Exclude bulky dependencies and local environment secrets
+node_modules/
+.env
+.DS_Store
+Thumbs.db
+dist/
+build/
