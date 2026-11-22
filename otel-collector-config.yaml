@@ -30,6 +30,10 @@ exporters:
     endpoint: lgtm:4317
     tls:
       insecure: true
+  otlp_http/honeycomb:
+    endpoint: "https://api.honeycomb.io"
+    headers:
+      "x-honeycomb-team": "hcaik_01m6xsmdhdrkqfkmawcbhb80r7hr4tpqpc4aqskwsx67ws4vd6c9yhwdbb"
 
 service:
   pipelines:

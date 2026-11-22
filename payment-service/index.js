@@ -10,9 +10,13 @@ const { trace, metrics, SpanStatusCode } = require('@opentelemetry/api');
 const loggerProvider = new LoggerProvider({
   resource: new Resource({ 'service.name': process.env.OTEL_SERVICE_NAME || 'payment-service' }),
 });
+const otlpBase = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://otel-collector:4318';
+const authHeader = process.env.GRAFANA_CLOUD_BASIC_AUTH
+  ? { Authorization: `Basic ${process.env.GRAFANA_CLOUD_BASIC_AUTH}` }
+  : {};
 loggerProvider.addLogRecordProcessor(
   new SimpleLogRecordProcessor(
-    new OTLPLogExporter({ url: 'http://otel-collector:4318/v1/logs' })
+    new OTLPLogExporter({ url: `${otlpBase}/v1/logs`, headers: authHeader })
   )
 );
 logs.setGlobalLoggerProvider(loggerProvider);
@@ -79,4 +83,6 @@ app.post('/charge', async (req, res) => {
   res.json({ status: 'charged', transactionId: `TXN-${Date.now()}`, orderId, amount });
 });
 
-app.listen(8001, () => console.log('payment-service listening on port 8001'));
+
+const PORT = process.env.PORT || 8001;
+app.listen(PORT, () => console.log(`Payment-service listening on port ${PORT}`));

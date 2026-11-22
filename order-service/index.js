@@ -1,5 +1,9 @@
 const express = require('express');
 const http = require('http');
+const https = require('https');
+
+const PAYMENT_URL = process.env.PAYMENT_URL || 'http://payment-service:8001/charge';
+
 const winston = require('winston');
 const { logs } = require('@opentelemetry/api-logs');
 const { LoggerProvider, SimpleLogRecordProcessor } = require('@opentelemetry/sdk-logs');
@@ -12,9 +16,13 @@ const { trace, metrics, SpanStatusCode } = require('@opentelemetry/api');
 const loggerProvider = new LoggerProvider({
   resource: new Resource({ 'service.name': process.env.OTEL_SERVICE_NAME || 'order-service' }),
 });
+const otlpBase = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://otel-collector:4318';
+const authHeader = process.env.GRAFANA_CLOUD_BASIC_AUTH
+  ? { Authorization: `Basic ${process.env.GRAFANA_CLOUD_BASIC_AUTH}` }
+  : {};
 loggerProvider.addLogRecordProcessor(
   new SimpleLogRecordProcessor(
-    new OTLPLogExporter({ url: 'http://otel-collector:4318/v1/logs' })
+    new OTLPLogExporter({ url: `${otlpBase}/v1/logs`, headers: authHeader })
   )
 );
 logs.setGlobalLoggerProvider(loggerProvider);
@@ -38,17 +46,15 @@ const ordersCounter = meter.createCounter('orders_processed_total', {
   description: 'Total number of checkout orders processed',
 });
 
-const PAYMENT_HOST = process.env.PAYMENT_HOST || 'payment-service';
-const PAYMENT_PORT = process.env.PAYMENT_PORT || 8001;
-
 function callPaymentService(payload) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(payload);
-    const req = http.request(
+    const url = new URL(PAYMENT_URL);
+    const client = url.protocol === 'https:' ? https : http;
+
+    const req = client.request(
+        url,
       {
-        hostname: PAYMENT_HOST,
-        port: PAYMENT_PORT,
-        path: '/charge',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,4 +125,5 @@ app.post('/checkout', async (req, res) => {
   }
 });
 
-app.listen(8000, () => console.log('order-service listening on port 8000'));
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => console.log(`Order-service listening on port ${PORT}`));
