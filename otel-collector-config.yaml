@@ -30,6 +30,10 @@ exporters:
     endpoint: lgtm:4317
     tls:
       insecure: true
+  otlphttp/grafanacloud:
+    endpoint: "${env:GRAFANA_CLOUD_OTLP_ENDPOINT}"
+    headers:
+      "Authorization": "Basic ${env:GRAFANA_CLOUD_BASIC_AUTH}"
   otlp_http/honeycomb:
     endpoint: "https://api.honeycomb.io"
     headers:
@@ -41,12 +45,12 @@ service:
       receivers: [otlp]
       # 2. Register attributes/scrub_pii in the traces pipeline!
       processors: [attributes/scrub_pii, batch]
-      exporters: [debug, otlp/lgtm]
+      exporters: [debug, otlp/lgtm, otlphttp/grafanacloud, otlp_http/honeycomb]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, otlp/lgtm]
+      exporters: [debug, otlp/lgtm, otlphttp/grafanacloud, otlp_http/honeycomb]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, otlp/lgtm]
+      exporters: [debug, otlp/lgtm, otlphttp/grafanacloud, otlp_http/honeycomb]
