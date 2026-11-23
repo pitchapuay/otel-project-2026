@@ -81,7 +81,13 @@ function callPaymentService(payload) {
       (res) => {
         let body = '';
         res.on('data', (chunk) => (body += chunk));
-        res.on('end', () => resolve({ statusCode: res.statusCode, body: JSON.parse(body || '{}') }));
+        res.on('end', () => {
+          try {
+            resolve({ statusCode: res.statusCode, body: JSON.parse(body || '{}') });
+          } catch {
+            resolve({ statusCode: res.statusCode, body: { rawError: body.slice(0, 200) } });
+          }
+        });
       }
     );
     req.on('error', reject);
